@@ -1,0 +1,35 @@
+name: Build IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract project
+        run: unzip -q IslandDemo-project.zip
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build IPA
+        run: |
+          cd IslandDemo
+          xcodegen generate
+          xcodebuild -project IslandDemo.xcodeproj \
+            -scheme IslandDemo \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/IslandDemo.app Payload/
+          zip -r IslandDemo.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IslandDemo-IPA
+          path: IslandDemo/IslandDemo.ipa
